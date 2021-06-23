@@ -1,6 +1,14 @@
-# clustering-exercises
+# Predicting Zillow Home Values
 
 
+## Goal
+
+The goal is to create a model using clustering methodologies to better predict the logerror in the current Zestimate on Zillow.
+
+The log error is defined as logerror=log(Zestimate)−log(SalePrice)
+
+
+### Data Dictionary
 
 | Feature                      | Description                                                                                                        | Data Type                      |
 |------------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------|
@@ -22,3 +30,20 @@
 | taxvaluedollarcnt            | Total tax assessed value                                                                                           | continuous, float              |
 | landtaxvaluedollarcnt        | Assessed tax value of the land                                                                                     | continuous, float              |
 | taxamount                    | Total property tax assessed                                                                                        | continuous, float              |
+
+## Project Steps
+
+### Acquire
+
+The Acquire.py module contains several funtions:
+- Sets up the connection to the MySQL database where the data is stored.
+- Acquires the Zillow data according to a SQL statement.
+- Caches the acquired data locally to speed up processing.
+
+### Prepare
+
+### Explore
+
+### Model
+
+### Conclusion

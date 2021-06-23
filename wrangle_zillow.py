@@ -5,70 +5,15 @@ from env import host, username, password
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+# ignore warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+
 # Statistical Tests
 import scipy.stats as stats
 
-# Establish a connection
-def get_connection(db, user=username, host=host, password=password):
-    '''
-    This function uses my info from my env file to
-    create a connection url to access the CodeUp db.
-    '''
-    return f'mysql+pymysql://{user}:{password}@{host}/{db}'
 
-def new_zillow_data():
-    '''
-    This function reads the Zillow data from the CodeUp db into a df.
-    '''
-    sql_query = '''
-          SELECT prop.*, 
-                pred.logerror, 
-                pred.transactiondate, 
-                air.airconditioningdesc, 
-                arch.architecturalstyledesc, 
-                build.buildingclassdesc, 
-                heat.heatingorsystemdesc, 
-                landuse.propertylandusedesc, 
-                story.storydesc, 
-                construct.typeconstructiondesc 
-            FROM   properties_2017 prop  
-            INNER JOIN (SELECT parcelid,
-       					  logerror,
-                          Max(transactiondate) transactiondate 
-                        FROM   predictions_2017 
-                        GROUP  BY parcelid, logerror) pred
-                    USING (parcelid) 
-                LEFT JOIN airconditioningtype air USING (airconditioningtypeid) 
-                LEFT JOIN architecturalstyletype arch USING (architecturalstyletypeid) 
-                LEFT JOIN buildingclasstype build USING (buildingclasstypeid) 
-                LEFT JOIN heatingorsystemtype heat USING (heatingorsystemtypeid) 
-                LEFT JOIN propertylandusetype landuse USING (propertylandusetypeid) 
-                LEFT JOIN storytype story USING (storytypeid) 
-                LEFT JOIN typeconstructiontype construct USING (typeconstructiontypeid) 
-                    WHERE  prop.latitude IS NOT NULL 
-                        AND prop.longitude IS NOT NULL
-                '''
-    df = pd.read_sql(sql_query, get_connection('zillow'))
-
-    return df
-
-
-# Acquire Data
-def get_zillow_data(cached=False):
-    '''
-    This function reads in zillow data from Codeup database and returns it
-    as a .csv file containing a single dataframe. 
-    '''
-    
-    filename = "zillow.csv"
-    if cached == False or os.path.isfile(filename) == False:
-        df = new_zillow_data()
-        df.to_csv(filename)
-    else:
-        df = pd.read_csv(filename, index_col=0)
-      
-   
-    return df
 
 #Summarize Data 
 
@@ -95,10 +40,10 @@ def get_numeric_cols(df, object_cols):
     
     return numeric_cols
 
-def get_single_use_prop(df):
-    single_use = [261, 262, 263, 264, 266, 268, 273, 276, 279]
-    df = df[df.propertylandusetypeid.isin(single_use)]
-    return df 
+# def get_single_use_prop(df):
+#     single_use = [261, 262, 263, 264, 266, 268, 273, 276, 279]
+#     df = df[df.propertylandusetypeid.isin(single_use)]
+#     return df 
 
 def handle_missing_values(df, prop_required_row = 0.5, prop_required_col = 0.5):
     ''' funtcion which takes in a dataframe, required notnull proportions of non-null rows and columns.
@@ -213,23 +158,49 @@ def create_dummies(df, object_cols):
     df = pd.concat([df, dummy_df], axis=1)
 
     return df
+def remove_outliers():
+    '''
+    remove outliers in bed, bath, zip, square feet, acres & tax rate
+    '''
 
-def train_validate_test_split(df, target, seed=123):
+    return df[((df.bathroomcnt <= 7) & (df.bedroomcnt <= 7) & 
+               (df.regionidzip < 100000) & 
+               (df.bathroomcnt > 0) & 
+               (df.bedroomcnt > 0) & 
+               (df.acres < 20) &
+               (df.calculatedfinishedsquarefeet < 10000) & 
+               (df.taxrate < 10)
+              )]
+
+def split(df, target_var):
     '''
-    This function takes in a dataframe, the name of the target variable
-    (for stratification purposes), and an integer for a setting a seed
-    and splits the data into train, validate and test. 
-    Test is 20% of the original dataset, validate is .30*.80= 24% of the 
-    original dataset, and train is .70*.80= 56% of the original dataset. 
-    The function returns, in this order, train, validate and test dataframes. 
+    This function takes in the dataframe and target variable name as arguments and then
+    splits the dataframe into train (56%), validate (24%), & test (20%)
+    It will return a list containing the following dataframes: train (for exploration), 
+    X_train, X_validate, X_test, y_train, y_validate, y_test
     '''
-    train_validate, test = train_test_split(df, test_size=0.2, 
-                                            random_state=seed, 
-                                            stratify=df[target])
-    train, validate = train_test_split(train_validate, test_size=0.3, 
-                                       random_state=seed,
-                                       stratify=train_validate[target])
-    return train, validate, test
+    # split df into train_validate (80%) and test (20%)
+    train_validate, test = train_test_split(df, test_size=.20, random_state=13)
+    # split train_validate into train(70% of 80% = 56%) and validate (30% of 80% = 24%)
+    train, validate = train_test_split(train_validate, test_size=.3, random_state=13)
+
+    # create X_train by dropping the target variable 
+    X_train = train.drop(columns=[target_var])
+    # create y_train by keeping only the target variable.
+    y_train = train[[target_var]]
+
+    # create X_validate by dropping the target variable 
+    X_validate = validate.drop(columns=[target_var])
+    # create y_validate by keeping only the target variable.
+    y_validate = validate[[target_var]]
+
+    # create X_test by dropping the target variable 
+    X_test = test.drop(columns=[target_var])
+    # create y_test by keeping only the target variable.
+    y_test = test[[target_var]]
+
+    partitions = [train, X_train, X_validate, X_test, y_train, y_validate, y_test]
+    return partitions
 
 def scale_my_data(train, validate, test):
     #call numeric cols
