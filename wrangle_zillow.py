@@ -141,13 +141,13 @@ def clean_zillow(df):
 
     df.set_index('parcelid', inplace=True)
 
-    cols_to_drop = ['fullbathcnt','heatingorsystemtypeid','finishedsquarefeet12', 
-                'propertycountylandusecode', 'propertylandusetypeid','propertyzoningdesc', 'censustractandblock',
-                'propertylandusedesc', 'buildingqualitytypeid' , 'unitcnt', 'heatingorsystemdesc', 
-                'lotsizesquarefeet','regionidcity', 'calculatedbathnbr', 'transactiondate', 'roomcnt', 'id', 'regionidcounty',
-                'regionidzip', 'assessmentyear']
+    # cols_to_drop = ['fullbathcnt','heatingorsystemtypeid','finishedsquarefeet12', 
+    #             'propertycountylandusecode', 'propertylandusetypeid','propertyzoningdesc', 'censustractandblock',
+    #             'propertylandusedesc', 'buildingqualitytypeid' , 'unitcnt', 'heatingorsystemdesc', 
+    #             'lotsizesquarefeet','regionidcity', 'calculatedbathnbr', 'transactiondate', 'roomcnt', 'id', 'regionidcounty',
+    #             'regionidzip', 'assessmentyear']
 
-    df.drop(columns=cols_to_drop, inplace = True)
+    # df.drop(columns=cols_to_drop, inplace = True)
 
     df.dropna(inplace = True)
 
@@ -157,24 +157,42 @@ def clean_zillow(df):
 
     return df
 
-def get_county(df):
+#def get_county(df):
     #Convert fips to int
-    df.fips = df.fips.astype('int64')
+    # df.fips = df.fips.astype('int64')
 
-    county = []
+    # county = []
 
-    for row in df['fips']:
-        if row == 6037:
-            county.append('Los Angeles')
-        elif row == 6059:
-            county.append('Orange')
-        elif row == 6111:
-            county.append('Ventura')
+    # for row in df['fips']:
+    #     if row == 6037:
+    #         county.append('Los Angeles')
+    #     elif row == 6059:
+    #         county.append('Orange')
+    #     elif row == 6111:
+    #         county.append('Ventura')
         
-    df['county'] = county
+    # df['county'] = county
 
-    df.drop(columns={'fips'}, inplace=True)
-    return df
+    # df.drop(columns={'fips'}, inplace=True)
+    # return df
+
+def get_counties(df):
+    '''
+    This function will create dummy variables out of the original fips column. 
+    And return a dataframe with all of the original columns except regionidcounty.
+    We will keep fips column for data validation after making changes. 
+    New columns added will be 'LA', 'Orange', and 'Ventura' which are boolean 
+    The fips ids are renamed to be the name of the county each represents. 
+    '''
+    # create dummy vars of fips id
+    county_df = pd.get_dummies(df.fips)
+    # rename columns by actual county name
+    county_df.columns = ['LA', 'Orange', 'Ventura']
+    # concatenate the dataframe with the 3 county columns to the original dataframe
+    df_dummies = pd.concat([df, county_df], axis = 1)
+    # drop regionidcounty and fips columns
+    # df_dummies = df_dummies.drop(columns = ['regionidcounty'])
+    return df_dummies
 
 def create_dummies(df, object_cols):
     '''
@@ -231,7 +249,7 @@ def scale_my_data(train, validate, test):
 def prepare_zillow(df):
     #Separate logerror into quantiles
     df['logerror_class'] = pd.qcut(df.logerror, q=4, labels=['q1', 'q2', 'q3', 'q4'])
-    get_county(df)
+    df = get_counties(df)
     return df
 
     #Split data into Train, Validate, and Test

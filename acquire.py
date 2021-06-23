@@ -24,18 +24,27 @@ def new_zillow_data():
     This function reads data from the Codeup db into a df.
     '''
 
-    sql_query = '''SELECT *
-                FROM properties_2017 
-                JOIN predictions_2017 using (parcelid) 
-                left JOIN propertylandusetype using (propertylandusetypeid) 
-	            left join airconditioningtype using (airconditioningtypeid)
-	            left join architecturalstyletype using (architecturalstyletypeid)
-                left join buildingclasstype using (buildingclasstypeid)
-               	left join heatingorsystemtype using (heatingorsystemtypeid)
-	            left join storytype using (storytypeid)
-             	left join typeconstructiontype using (typeconstructiontypeid) 
-                WHERE month(transactiondate) >= 01 and month(transactiondate) <= 12 
- 				and latitude > 0 and longitude < 0;'''
+    sql_query = '''select prop.parcelid
+        , pred.logerror
+        , bathroomcnt
+        , bedroomcnt
+        , calculatedfinishedsquarefeet
+        , fips
+        , latitude
+        , longitude
+        , lotsizesquarefeet
+        , propertylandusetypeid
+        , regionidcity
+        , regionidcounty
+        , regionidzip
+        , yearbuilt
+        , structuretaxvaluedollarcnt
+        , taxvaluedollarcnt
+        , landtaxvaluedollarcnt
+        , taxamount
+    from properties_2017 prop
+    inner join predictions_2017 pred on prop.parcelid = pred.parcelid
+    where propertylandusetypeid = 261;'''
     return pd.read_sql(sql_query, get_connection('zillow'))
 
 
