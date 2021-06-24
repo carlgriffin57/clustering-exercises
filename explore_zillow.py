@@ -1,46 +1,49 @@
 import pandas as pd
 import numpy as np
 import os
+import seaborn as sns
+import matplotlib.pyplot as plt
 from env import host, username, password
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 # Statistical Tests
 import scipy.stats as stats
 
-def get_object_cols(df):
-    '''
-    This function takes in a dataframe and identifies the columns that are object types
-    and returns a list of those column names. 
-    '''
-    # create a mask of columns whether they are object type or not
-    mask = np.array(df.dtypes == "object")
+# def get_object_cols(df):
+#     '''
+#     This function takes in a dataframe and identifies the columns that are object types
+#     and returns a list of those column names. 
+#     '''
+#     # create a mask of columns whether they are object type or not
+#     mask = np.array(df.dtypes == "object")
 
         
-    # get a list of the column names that are objects (from the mask)
-    object_cols = df.iloc[:, mask].columns.tolist()
+#     # get a list of the column names that are objects (from the mask)
+#     object_cols = df.iloc[:, mask].columns.tolist()
     
-    return object_cols
+#     return object_cols
 
-def create_dummies(df, object_cols):
-    '''
-    This function takes in a dataframe and list of object column names,
-    and creates dummy variables of each of those columns. 
-    It then appends the dummy variables to the original dataframe. 
-    It returns the original df with the appended dummy variables. 
-    '''
-    object_cols = get_object_cols(df)
-    # run pd.get_dummies() to create dummy vars for the object columns. 
-    # we will drop the column representing the first unique value of each variable
-    # we will opt to not create na columns for each variable with missing values 
-    # (all missing values have been removed.)
-    dummy_df = pd.get_dummies(df[object_cols], dummy_na=False, drop_first=True)
+# def create_dummies(df, object_cols):
+#     '''
+#     This function takes in a dataframe and list of object column names,
+#     and creates dummy variables of each of those columns. 
+#     It then appends the dummy variables to the original dataframe. 
+#     It returns the original df with the appended dummy variables. 
+#     '''
+#     object_cols = get_object_cols(df)
+#     # run pd.get_dummies() to create dummy vars for the object columns. 
+#     # we will drop the column representing the first unique value of each variable
+#     # we will opt to not create na columns for each variable with missing values 
+#     # (all missing values have been removed.)
+#     dummy_df = pd.get_dummies(df[object_cols], dummy_na=False, drop_first=True)
     
-    # concatenate the dataframe with dummies to our original dataframe
-    # via column (axis=1)
-    df = pd.concat([df, dummy_df], axis=1)
+#     # concatenate the dataframe with dummies to our original dataframe
+#     # via column (axis=1)
+#     df = pd.concat([df, dummy_df], axis=1)
 
-    return df
+#     return df
 
 def train_validate_test_split(df, target, seed=123):
         '''
@@ -221,13 +224,6 @@ def explore_bivariate_quant(train, categorical_target, continuous_target, quant_
 def compare_relationship(train, continuous_target, quant_var):
     return stats.spearmanr(train[quant_var], train[continuous_target], axis=0)
 
-#def plot_swarm(train, categorical_target, quant_var):
-#    average = train[quant_var].mean()
-#    p = sns.swarmplot(data=train, x=categorical_target, y=quant_var, color='lightgray')
- #   p = plt.title(quant_var)
-#    p = plt.axhline(average, ls='--', color='black')
- #   return p
-
 def plot_boxen(train, categorical_target, quant_var):
     average = train[quant_var].mean()
     p = sns.boxenplot(data=train, x=categorical_target, y=quant_var, color='lightseagreen')
@@ -241,13 +237,14 @@ def plot_scatter(train, categorical_target, continuous_target, quant_var):
     return p
 
 
-######################### ____________________________________
-
+#########################
 ### Multivariate
 
 
 def explore_multivariate(train, categorical_target, binary_var, quant_vars):
     '''
+    takes in the categorical target, binary variable and the quantity variables
+    in order to create various plots
     '''
     plot_swarm_grid_with_color(train, categorical_target, binary_var, quant_vars)
     violin = plot_violin_grid_with_color(train, categorical_target, binary_var, quant_vars)
@@ -280,19 +277,6 @@ def plot_swarm_grid_with_color(train, categorical_target, binary_var, quant_vars
     for quant in quant_vars:
         sns.swarmplot(x=categorical_target, y=quant, data=train, split=True, hue=binary_var, palette="Set2")
         plt.show()
-                
-
-# 1. Write a function that will take, as input, a dataframe and a list containing the column names of all ordered numeric variables. It will output a pairplot and a heatmap.
-# 2. Write 2+ other functions for plotting in plots that will contribute to your exploration of what is driving the logerror.  Some ideas: 
-#    - seaborn's relplot where you can use 4 dimensions: x & y are continuous or continuous-like, color is discrete with limited number of values, size is numeric & ordered. 
-#    - seaborn's swarmplot (x, y, color)
-#    - logerror is normally distributed, so it is a great opportunity to use the t-test to test for significant differences in the logerror by creating sample groups based on various variables.  e.g. Is logerror significantly different for properties in Los Angeles County vs Orange County (or Ventura County)?  Is logerror significantly different for properties that are delinquent on their taxes vs those that are not?  Is logerror significantly different for properties built prior to 1960 than those built later than 2000?
-# 4. Chi-Squared test:  run at least one at least 1 $\chi^{2}$ test and summarize conclusions.  Ideas: If you split logerror into quartiles, you can expect the overall probability of falling into a single quartile to be 25%.  Now, add another variable, like bedrooms (and you can bin these if you want fewer distinct values) and compare the probabilities of bedrooms with logerror quartiles.  See the example in the Classification_Project notebook we reviewed on how to implement chi-squared.
-# 5. write a function that will take a dataframe and a list of continuous-like column names to plot each combination of variables in the chart type of your choice.
-# 6. Write a function that will take a dataframe and a list of continuous-like column names, limited discrete/categorical column names (<10), and names of columns with limited discrete/categorical values that could be used as color/hue (<5 or so).  It will plot each combination of variables in the chart type of your choice (that takes those types and number of dimensions) 
-
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 def pair_plot(df):
     p = sns.pairplot(df)
@@ -302,3 +286,89 @@ def heat_map(df):
     plt.figure(figsize=(8,6))
     q = sns.heatmap(df.corr(), cmap='RdYlBu', annot=True, center=0)
     return q
+
+def find_k(X_train, cluster_vars, k_range):
+    '''
+    this function creates several plots to help find the 'elbow' to determing the k value
+    '''
+    sse = []
+    for k in k_range:
+        kmeans = KMeans(n_clusters=k)
+
+        # X[0] is our X_train dataframe..the first dataframe in the list of dataframes stored in X. 
+        kmeans.fit(X_train[cluster_vars])
+
+        # inertia: Sum of squared distances of samples to their closest cluster center.
+        sse.append(kmeans.inertia_) 
+
+    # compute the difference from one k to the next
+    delta = [round(sse[i] - sse[i+1],0) for i in range(len(sse)-1)]
+
+    # compute the percent difference from one k to the next
+    pct_delta = [round(((sse[i] - sse[i+1])/sse[i])*100, 1) for i in range(len(sse)-1)]
+
+    # create a dataframe with all of our metrics to compare them across values of k: SSE, delta, pct_delta
+    k_comparisons_df = pd.DataFrame(dict(k=k_range[0:-1], 
+                             sse=sse[0:-1], 
+                             delta=delta, 
+                             pct_delta=pct_delta))
+
+    # plot k with inertia
+    plt.plot(k_comparisons_df.k, k_comparisons_df.sse, 'bx-')
+    plt.xlabel('k')
+    plt.ylabel('SSE')
+    plt.title('The Elbow Method to find the optimal k\nFor which k values do we see large decreases in SSE?')
+    plt.show()
+
+    # plot k with pct_delta
+    plt.plot(k_comparisons_df.k, k_comparisons_df.pct_delta, 'bx-')
+    plt.xlabel('k')
+    plt.ylabel('Percent Change')
+    plt.title('For which k values are we seeing increased changes (%) in SSE?')
+    plt.show()
+
+    # plot k with delta
+    plt.plot(k_comparisons_df.k, k_comparisons_df.delta, 'bx-')
+    plt.xlabel('k')
+    plt.ylabel('Absolute Change in SSE')
+    plt.title('For which k values are we seeing increased changes (absolute) in SSE?')
+    plt.show()
+
+    return k_comparisons_df
+
+def create_clusters(X_train, k, cluster_vars):
+    # create kmean object
+    kmeans = KMeans(n_clusters=k, random_state = 123)
+
+    # fit to train and assign cluster ids to observations
+    kmeans.fit(X_train[cluster_vars])
+
+    return kmeans
+
+def get_centroids(kmeans, cluster_vars, cluster_name):
+    '''
+    get the centroids for each distinct cluster...
+    '''
+
+    centroid_col_names = ['centroid_' + i for i in cluster_vars]
+
+    centroid_df = pd.DataFrame(kmeans.cluster_centers_, 
+                               columns=centroid_col_names).reset_index().rename(columns={'index': cluster_name})
+
+    return centroid_df
+
+
+
+def assign_clusters(X, kmeans, cluster_vars, cluster_name, centroid_df):
+    '''
+    label cluster for each observation in X_train (X[0] in our X list of dataframes), 
+    X_validate (X[1]), & X_test (X[2])
+    '''
+    for i in range(len(X)):
+        clusters = pd.DataFrame(kmeans.predict(X[i][cluster_vars]), 
+                            columns=[cluster_name], index=X[i].index)
+
+        clusters_centroids = clusters.merge(centroid_df, on=cluster_name, copy=False).set_index(clusters.index.values)
+
+        X[i] = pd.concat([X[i], clusters_centroids], axis=1)
+    return X
