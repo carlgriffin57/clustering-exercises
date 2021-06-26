@@ -11,6 +11,21 @@ from sklearn.cluster import KMeans
 # Statistical Tests
 import scipy.stats as stats
 
+def tts(df):
+    # split test off, 20% of original df size. 
+    train_validate, test = train_test_split(df, test_size=.2, 
+                                            random_state=42)
+
+    # split validate off, 30% of what remains (24% of original df size)
+    # thus train will be 56% of original df size. 
+    train, validate = train_test_split(train_validate, test_size=.3, 
+                                    random_state=42)
+
+    print("train observations: ", train.size)
+    print("validate observations: ", validate.size)
+    print("test observations: ", test.size)
+    return train, validate, test
+
 # def get_object_cols(df):
 #     '''
 #     This function takes in a dataframe and identifies the columns that are object types

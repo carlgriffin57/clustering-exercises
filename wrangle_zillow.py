@@ -256,9 +256,11 @@ def split(df, target_var):
     partitions = [train, X_train, X_validate, X_test, y_train, y_validate, y_test]
     return partitions
 
-def scale_my_data(train, validate, test):
+def scale_my_data(df, train, validate, test):
+    # call obj cols
+    object_cols = get_object_cols(df)
     #call numeric cols
-    numeric_cols = get_numeric_cols(df)
+    numeric_cols = get_numeric_cols(df, object_cols)
     scaler = StandardScaler()
     scaler.fit(train[[numeric_cols]])
 
