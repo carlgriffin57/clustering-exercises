@@ -3,7 +3,7 @@ import numpy as np
 import os
 from env import host, username, password
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+import sklearn.preprocessing
 
 # ignore warnings
 import warnings
@@ -256,31 +256,41 @@ def split(df, target_var):
     partitions = [train, X_train, X_validate, X_test, y_train, y_validate, y_test]
     return partitions
 
-def scale_my_data(df, train, validate, test):
-    # call obj cols
-    object_cols = get_object_cols(df)
-    #call numeric cols
-    numeric_cols = get_numeric_cols(df, object_cols)
-    scaler = StandardScaler()
-    scaler.fit(train[[numeric_cols]])
+def scale_my_data(train, validate, test):
 
-    X_train_scaled = scaler.transform(train[[numeric_cols]])
-    X_validate_scaled = scaler.transform(validate[[numeric_cols]])
-    X_test_scaled = scaler.transform(test[[numeric_cols]])
+    train = train.drop('logerror', axis=1)
+    validate = validate.drop('logerror', axis=1)
+    test = test.drop('logerror', axis=1)
 
-    train[[numeric_cols]] = X_train_scaled
-    validate[[numeric_cols]] = X_validate_scaled
-    test[[numeric_cols]] = X_test_scaled
-    return train, validate, test
+    # 1. Create the Scaling Object
+    scaler = sklearn.preprocessing.StandardScaler()
+
+    # 2. Fit to the train data only
+    scaler.fit(train)
+
+    # 3. use the object on the whole df
+    # this returns an array, so we convert to df in the same line
+    train_scaled = pd.DataFrame(scaler.transform(train))
+    validate_scaled = pd.DataFrame(scaler.transform(validate))
+    test_scaled = pd.DataFrame(scaler.transform(test))
+
+    # the result of changing an array to a df resets the index and columns
+    # for each train, validate, and test, we change the index and columns back to original values
+
+    # Train
+    train_scaled.index = train.index
+    train_scaled.columns = train.columns
+
+    # Validate
+    validate_scaled.index = validate.index
+    validate_scaled.columns = validate.columns
+
+    # Test
+    test_scaled.index = test.index
+    test_scaled.columns = test.columns
+
+    return train_scaled, validate_scaled, test_scaled
 
 def prepare_zillow(df):
-    #Separate logerror into quantiles
-    df['logerror_class'] = pd.qcut(df.logerror, q=4, labels=['q1', 'q2', 'q3', 'q4'])
     df = get_counties(df)
     return df
-
-    #Split data into Train, Validate, and Test
-    #train, validate, test = train_validate_test_split(df, target='logerror_class', seed=123)
-    #train, validate, test = scale_my_data(train, validate, test)
-
-    #return train, validate, test
